@@ -23,8 +23,6 @@ namespace UWPIconExtractor {
 
         public String ApplicationUserModelId { get; private set; }
 
-        public String Logo { get; private set; }
-
         public IReadOnlyList<AppxApp> Apps {
             get {
                 return _apps;
@@ -159,7 +157,6 @@ namespace UWPIconExtractor {
                     var reader = factory.CreateManifestReader(strm);
 
                     package._properties = reader.GetProperties();
-                    package.Logo = package.GetPropertyStringValue("Logo");
 
                     var apps = reader.GetApplications();
 
@@ -167,7 +164,6 @@ namespace UWPIconExtractor {
                         var app = apps.GetCurrent();
                         var appx = new AppxApp(app) {
                             Id = GetStringValue(app, "Id"),
-                            Logo = GetStringValue(app, "Logo"),
                             Square44x44Logo = GetStringValue(app, "Square44x44Logo")
                         };
 

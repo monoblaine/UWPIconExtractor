@@ -22,8 +22,6 @@ namespace UWPIconExtractor {
 
         public String Id { get; internal set; }
 
-        public String Logo { get; internal set; }
-
         public String Square44x44Logo { get; internal set; }
     }
 }
