@@ -177,96 +177,98 @@ namespace UWPIconExtractor {
         private static IEnumerable<AppxPackage> QueryPackageInfo (String fullName, PackageConstants flags) {
             OpenPackageInfoByFullName(fullName, 0, out var infoRef);
 
-            if (infoRef != IntPtr.Zero) {
-                IntPtr infoBuffer = IntPtr.Zero;
+            if (infoRef == IntPtr.Zero) {
+                yield break;
+            }
 
-                try {
-                    var len = 0;
+            IntPtr infoBuffer = IntPtr.Zero;
 
-                    GetPackageInfo(infoRef, flags, ref len, IntPtr.Zero, out var count);
+            try {
+                var len = 0;
 
-                    if (len > 0) {
-                        var factory = (IAppxFactory) new AppxFactory();
+                GetPackageInfo(infoRef, flags, ref len, IntPtr.Zero, out var count);
 
-                        infoBuffer = Marshal.AllocHGlobal(len);
+                if (len > 0) {
+                    var factory = (IAppxFactory) new AppxFactory();
 
-                        var res = GetPackageInfo(infoRef, flags, ref len, infoBuffer, out count);
+                    infoBuffer = Marshal.AllocHGlobal(len);
 
-                        for (var i = 0; i < count; i++) {
-                            var info = (PACKAGE_INFO) Marshal.PtrToStructure(infoBuffer + i * Marshal.SizeOf(typeof(PACKAGE_INFO)), typeof(PACKAGE_INFO));
-                            var package = new AppxPackage {
-                                FamilyName = Marshal.PtrToStringUni(info.packageFamilyName),
-                                FullName = Marshal.PtrToStringUni(info.packageFullName),
-                                Path = Marshal.PtrToStringUni(info.path),
-                                Publisher = Marshal.PtrToStringUni(info.packageId.publisher),
-                                PublisherId = Marshal.PtrToStringUni(info.packageId.publisherId),
-                                ResourceId = Marshal.PtrToStringUni(info.packageId.resourceId),
-                                ProcessorArchitecture = info.packageId.processorArchitecture,
-                                Version = new Version(info.packageId.VersionMajor, info.packageId.VersionMinor, info.packageId.VersionBuild, info.packageId.VersionRevision)
-                            };
+                    var res = GetPackageInfo(infoRef, flags, ref len, infoBuffer, out count);
 
-                            // read manifest
-                            var manifestPath = System.IO.Path.Combine(package.Path, "AppXManifest.xml");
-                            const Int32 STGM_SHARE_DENY_NONE = 0x40;
+                    for (var i = 0; i < count; i++) {
+                        var info = (PACKAGE_INFO) Marshal.PtrToStructure(infoBuffer + i * Marshal.SizeOf(typeof(PACKAGE_INFO)), typeof(PACKAGE_INFO));
+                        var package = new AppxPackage {
+                            FamilyName = Marshal.PtrToStringUni(info.packageFamilyName),
+                            FullName = Marshal.PtrToStringUni(info.packageFullName),
+                            Path = Marshal.PtrToStringUni(info.path),
+                            Publisher = Marshal.PtrToStringUni(info.packageId.publisher),
+                            PublisherId = Marshal.PtrToStringUni(info.packageId.publisherId),
+                            ResourceId = Marshal.PtrToStringUni(info.packageId.resourceId),
+                            ProcessorArchitecture = info.packageId.processorArchitecture,
+                            Version = new Version(info.packageId.VersionMajor, info.packageId.VersionMinor, info.packageId.VersionBuild, info.packageId.VersionRevision)
+                        };
 
-                            SHCreateStreamOnFileEx(manifestPath, STGM_SHARE_DENY_NONE, 0, false, IntPtr.Zero, out var strm);
+                        // read manifest
+                        var manifestPath = System.IO.Path.Combine(package.Path, "AppXManifest.xml");
+                        const Int32 STGM_SHARE_DENY_NONE = 0x40;
 
-                            if (strm != null) {
-                                var reader = factory.CreateManifestReader(strm);
+                        SHCreateStreamOnFileEx(manifestPath, STGM_SHARE_DENY_NONE, 0, false, IntPtr.Zero, out var strm);
 
-                                package._properties = reader.GetProperties();
-                                package.Description = package.GetPropertyStringValue("Description");
-                                package.DisplayName = package.GetPropertyStringValue("DisplayName");
-                                package.Logo = package.GetPropertyStringValue("Logo");
-                                package.PublisherDisplayName = package.GetPropertyStringValue("PublisherDisplayName");
-                                package.IsFramework = package.GetPropertyBoolValue("Framework");
+                        if (strm != null) {
+                            var reader = factory.CreateManifestReader(strm);
 
-                                var apps = reader.GetApplications();
+                            package._properties = reader.GetProperties();
+                            package.Description = package.GetPropertyStringValue("Description");
+                            package.DisplayName = package.GetPropertyStringValue("DisplayName");
+                            package.Logo = package.GetPropertyStringValue("Logo");
+                            package.PublisherDisplayName = package.GetPropertyStringValue("PublisherDisplayName");
+                            package.IsFramework = package.GetPropertyBoolValue("Framework");
 
-                                while (apps.GetHasCurrent()) {
-                                    var app = apps.GetCurrent();
-                                    var appx = new AppxApp(app) {
-                                        Description = GetStringValue(app, "Description"),
-                                        DisplayName = GetStringValue(app, "DisplayName"),
-                                        EntryPoint = GetStringValue(app, "EntryPoint"),
-                                        Executable = GetStringValue(app, "Executable"),
-                                        Id = GetStringValue(app, "Id"),
-                                        Logo = GetStringValue(app, "Logo"),
-                                        SmallLogo = GetStringValue(app, "SmallLogo"),
-                                        StartPage = GetStringValue(app, "StartPage"),
-                                        Square150x150Logo = GetStringValue(app, "Square150x150Logo"),
-                                        Square30x30Logo = GetStringValue(app, "Square30x30Logo"),
-                                        Square44x44Logo = GetStringValue(app, "Square44x44Logo"),
-                                        BackgroundColor = GetStringValue(app, "BackgroundColor"),
-                                        ForegroundText = GetStringValue(app, "ForegroundText"),
-                                        WideLogo = GetStringValue(app, "WideLogo"),
-                                        Wide310x310Logo = GetStringValue(app, "Wide310x310Logo"),
-                                        ShortName = GetStringValue(app, "ShortName"),
-                                        Square310x310Logo = GetStringValue(app, "Square310x310Logo"),
-                                        Square70x70Logo = GetStringValue(app, "Square70x70Logo"),
-                                        MinWidth = GetStringValue(app, "MinWidth")
-                                    };
+                            var apps = reader.GetApplications();
 
-                                    package._apps.Add(appx);
-                                    apps.MoveNext();
-                                }
+                            while (apps.GetHasCurrent()) {
+                                var app = apps.GetCurrent();
+                                var appx = new AppxApp(app) {
+                                    Description = GetStringValue(app, "Description"),
+                                    DisplayName = GetStringValue(app, "DisplayName"),
+                                    EntryPoint = GetStringValue(app, "EntryPoint"),
+                                    Executable = GetStringValue(app, "Executable"),
+                                    Id = GetStringValue(app, "Id"),
+                                    Logo = GetStringValue(app, "Logo"),
+                                    SmallLogo = GetStringValue(app, "SmallLogo"),
+                                    StartPage = GetStringValue(app, "StartPage"),
+                                    Square150x150Logo = GetStringValue(app, "Square150x150Logo"),
+                                    Square30x30Logo = GetStringValue(app, "Square30x30Logo"),
+                                    Square44x44Logo = GetStringValue(app, "Square44x44Logo"),
+                                    BackgroundColor = GetStringValue(app, "BackgroundColor"),
+                                    ForegroundText = GetStringValue(app, "ForegroundText"),
+                                    WideLogo = GetStringValue(app, "WideLogo"),
+                                    Wide310x310Logo = GetStringValue(app, "Wide310x310Logo"),
+                                    ShortName = GetStringValue(app, "ShortName"),
+                                    Square310x310Logo = GetStringValue(app, "Square310x310Logo"),
+                                    Square70x70Logo = GetStringValue(app, "Square70x70Logo"),
+                                    MinWidth = GetStringValue(app, "MinWidth")
+                                };
 
-                                Marshal.ReleaseComObject(strm);
+                                package._apps.Add(appx);
+                                apps.MoveNext();
                             }
 
-                            yield return package;
+                            Marshal.ReleaseComObject(strm);
                         }
 
-                        Marshal.ReleaseComObject(factory);
-                    }
-                }
-                finally {
-                    if (infoBuffer != IntPtr.Zero) {
-                        Marshal.FreeHGlobal(infoBuffer);
+                        yield return package;
                     }
 
-                    ClosePackageInfo(infoRef);
+                    Marshal.ReleaseComObject(factory);
                 }
+            }
+            finally {
+                if (infoBuffer != IntPtr.Zero) {
+                    Marshal.FreeHGlobal(infoBuffer);
+                }
+
+                ClosePackageInfo(infoRef);
             }
         }
 
