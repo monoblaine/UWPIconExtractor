@@ -217,48 +217,50 @@ namespace UWPIconExtractor {
 
                     SHCreateStreamOnFileEx(manifestPath, STGM_SHARE_DENY_NONE, 0, false, IntPtr.Zero, out var strm);
 
-                    if (strm != null) {
-                        var reader = factory.CreateManifestReader(strm);
-
-                        package._properties = reader.GetProperties();
-                        package.Description = package.GetPropertyStringValue("Description");
-                        package.DisplayName = package.GetPropertyStringValue("DisplayName");
-                        package.Logo = package.GetPropertyStringValue("Logo");
-                        package.PublisherDisplayName = package.GetPropertyStringValue("PublisherDisplayName");
-                        package.IsFramework = package.GetPropertyBoolValue("Framework");
-
-                        var apps = reader.GetApplications();
-
-                        while (apps.GetHasCurrent()) {
-                            var app = apps.GetCurrent();
-                            var appx = new AppxApp(app) {
-                                Description = GetStringValue(app, "Description"),
-                                DisplayName = GetStringValue(app, "DisplayName"),
-                                EntryPoint = GetStringValue(app, "EntryPoint"),
-                                Executable = GetStringValue(app, "Executable"),
-                                Id = GetStringValue(app, "Id"),
-                                Logo = GetStringValue(app, "Logo"),
-                                SmallLogo = GetStringValue(app, "SmallLogo"),
-                                StartPage = GetStringValue(app, "StartPage"),
-                                Square150x150Logo = GetStringValue(app, "Square150x150Logo"),
-                                Square30x30Logo = GetStringValue(app, "Square30x30Logo"),
-                                Square44x44Logo = GetStringValue(app, "Square44x44Logo"),
-                                BackgroundColor = GetStringValue(app, "BackgroundColor"),
-                                ForegroundText = GetStringValue(app, "ForegroundText"),
-                                WideLogo = GetStringValue(app, "WideLogo"),
-                                Wide310x310Logo = GetStringValue(app, "Wide310x310Logo"),
-                                ShortName = GetStringValue(app, "ShortName"),
-                                Square310x310Logo = GetStringValue(app, "Square310x310Logo"),
-                                Square70x70Logo = GetStringValue(app, "Square70x70Logo"),
-                                MinWidth = GetStringValue(app, "MinWidth")
-                            };
-
-                            package._apps.Add(appx);
-                            apps.MoveNext();
-                        }
-
-                        Marshal.ReleaseComObject(strm);
+                    if (strm == null) {
+                        yield break;
                     }
+
+                    var reader = factory.CreateManifestReader(strm);
+
+                    package._properties = reader.GetProperties();
+                    package.Description = package.GetPropertyStringValue("Description");
+                    package.DisplayName = package.GetPropertyStringValue("DisplayName");
+                    package.Logo = package.GetPropertyStringValue("Logo");
+                    package.PublisherDisplayName = package.GetPropertyStringValue("PublisherDisplayName");
+                    package.IsFramework = package.GetPropertyBoolValue("Framework");
+
+                    var apps = reader.GetApplications();
+
+                    while (apps.GetHasCurrent()) {
+                        var app = apps.GetCurrent();
+                        var appx = new AppxApp(app) {
+                            Description = GetStringValue(app, "Description"),
+                            DisplayName = GetStringValue(app, "DisplayName"),
+                            EntryPoint = GetStringValue(app, "EntryPoint"),
+                            Executable = GetStringValue(app, "Executable"),
+                            Id = GetStringValue(app, "Id"),
+                            Logo = GetStringValue(app, "Logo"),
+                            SmallLogo = GetStringValue(app, "SmallLogo"),
+                            StartPage = GetStringValue(app, "StartPage"),
+                            Square150x150Logo = GetStringValue(app, "Square150x150Logo"),
+                            Square30x30Logo = GetStringValue(app, "Square30x30Logo"),
+                            Square44x44Logo = GetStringValue(app, "Square44x44Logo"),
+                            BackgroundColor = GetStringValue(app, "BackgroundColor"),
+                            ForegroundText = GetStringValue(app, "ForegroundText"),
+                            WideLogo = GetStringValue(app, "WideLogo"),
+                            Wide310x310Logo = GetStringValue(app, "Wide310x310Logo"),
+                            ShortName = GetStringValue(app, "ShortName"),
+                            Square310x310Logo = GetStringValue(app, "Square310x310Logo"),
+                            Square70x70Logo = GetStringValue(app, "Square70x70Logo"),
+                            MinWidth = GetStringValue(app, "MinWidth")
+                        };
+
+                        package._apps.Add(appx);
+                        apps.MoveNext();
+                    }
+
+                    Marshal.ReleaseComObject(strm);
 
                     yield return package;
                 }
