@@ -1,8 +1,6 @@
 //ş
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
@@ -11,8 +9,6 @@ using System.Text;
 namespace UWPIconExtractor {
     public class AppxPackage {
         private readonly List<AppxApp> _apps = new List<AppxApp>();
-
-        private IAppxManifestProperties _properties;
 
         private AppxPackage () {
         }
@@ -93,26 +89,6 @@ namespace UWPIconExtractor {
             return package;
         }
 
-        public String GetPropertyStringValue (String name) {
-            if (name == null) {
-                throw new ArgumentNullException("name");
-            }
-
-            return GetStringValue(_properties, name);
-        }
-
-        public Boolean GetPropertyBoolValue (String name) {
-            if (name == null) {
-                throw new ArgumentNullException("name");
-            }
-
-            return GetBoolValue(_properties, name);
-        }
-
-        public String LoadResourceString (String resource) {
-            return LoadResourceString(FullName, resource);
-        }
-
         private static IEnumerable<AppxPackage> QueryPackageInfo (String fullName, PackageConstants flags) {
             OpenPackageInfoByFullName(fullName, 0, out var infoRef);
 
@@ -155,9 +131,6 @@ namespace UWPIconExtractor {
                     }
 
                     var reader = factory.CreateManifestReader(strm);
-
-                    package._properties = reader.GetProperties();
-
                     var apps = reader.GetApplications();
 
                     while (apps.GetHasCurrent()) {
@@ -187,58 +160,6 @@ namespace UWPIconExtractor {
             }
         }
 
-        public static String LoadResourceString (String packageFullName, String resource) {
-            if (packageFullName == null) {
-                throw new ArgumentNullException("packageFullName");
-            }
-
-            if (String.IsNullOrWhiteSpace(resource)) {
-                return null;
-            }
-
-            const String resourceScheme = "ms-resource:";
-
-            if (!resource.StartsWith(resourceScheme)) {
-                return null;
-            }
-
-            var part = resource.Substring(resourceScheme.Length);
-            String url;
-
-            if (part.StartsWith("/")) {
-                url = resourceScheme + "//" + part;
-            }
-            else {
-                url = resourceScheme + "///resources/" + part;
-            }
-
-            var source = String.Format("@{{{0}? {1}}}", packageFullName, url);
-            var sb = new StringBuilder(1024);
-            var i = SHLoadIndirectString(source, sb, sb.Capacity, IntPtr.Zero);
-
-            if (i != 0) {
-                return null;
-            }
-
-            return sb.ToString();
-        }
-
-        private static String GetStringValue (IAppxManifestProperties props, String name) {
-            if (props == null) {
-                return null;
-            }
-
-            props.GetStringValue(name, out var value);
-
-            return value;
-        }
-
-        private static Boolean GetBoolValue (IAppxManifestProperties props, String name) {
-            props.GetBoolValue(name, out var value);
-
-            return value;
-        }
-
         internal static String GetStringValue (IAppxManifestApplication app, String name) {
             app.GetStringValue(name, out var value);
 
@@ -258,11 +179,7 @@ namespace UWPIconExtractor {
 
         [Guid("4E1BD148-55A0-4480-A3D1-15544710637C"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
         private interface IAppxManifestReader {
-            void _VtblGap0_1 (); // skip 1 method
-
-            IAppxManifestProperties GetProperties ();
-
-            void _VtblGap1_5 (); // skip 5 methods
+            void _VtblGap0_7 (); // skip 7 methods
 
             IAppxManifestApplicationsEnumerator GetApplications ();
         }
@@ -281,18 +198,6 @@ namespace UWPIconExtractor {
             [PreserveSig]
             Int32 GetStringValue ([MarshalAs(UnmanagedType.LPWStr)] String name, [MarshalAs(UnmanagedType.LPWStr)] out String vaue);
         }
-
-        [Guid("03FAF64D-F26F-4B2C-AAF7-8FE7789B8BCA"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-        private interface IAppxManifestProperties {
-            [PreserveSig]
-            Int32 GetBoolValue ([MarshalAs(UnmanagedType.LPWStr)] String name, out Boolean value);
-
-            [PreserveSig]
-            Int32 GetStringValue ([MarshalAs(UnmanagedType.LPWStr)] String name, [MarshalAs(UnmanagedType.LPWStr)] out String vaue);
-        }
-
-        [DllImport("shlwapi.dll", CharSet = CharSet.Unicode)]
-        private static extern Int32 SHLoadIndirectString (String pszSource, StringBuilder pszOutBuf, Int32 cchOutBuf, IntPtr ppvReserved);
 
         [DllImport("shlwapi.dll", CharSet = CharSet.Unicode)]
         private static extern Int32 SHCreateStreamOnFileEx (String fileName, Int32 grfMode, Int32 attributes, Boolean create, IntPtr reserved, out IStream stream);
