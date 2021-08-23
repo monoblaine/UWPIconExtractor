@@ -17,15 +17,9 @@ namespace UWPIconExtractor {
 
         public String Path { get; private set; }
 
-        public IReadOnlyList<AppxApp> Apps {
-            get {
-                return _apps;
-            }
-        }
+        public IReadOnlyList<AppxApp> Apps => _apps;
 
-        public override String ToString () {
-            return FullName;
-        }
+        public override String ToString () => FullName;
 
         public static AppxPackage FromWindow (IntPtr handle) {
             GetWindowThreadProcessId(handle, out var processId);
