@@ -57,31 +57,6 @@ namespace UWPIconExtractor {
             }
         }
 
-        public String FindHighestScaleQualifiedImagePath (String resourceName) {
-            if (resourceName == null) {
-                throw new ArgumentNullException("resourceName");
-            }
-
-            const String scaleToken = ".scale-";
-            var sizes = new List<Int32>();
-            var name = System.IO.Path.GetFileNameWithoutExtension(resourceName);
-            var ext = System.IO.Path.GetExtension(resourceName);
-            foreach (var file in Directory.EnumerateFiles(System.IO.Path.Combine(Path, System.IO.Path.GetDirectoryName(resourceName)), name + scaleToken + "*" + ext)) {
-                var fileName = System.IO.Path.GetFileNameWithoutExtension(file);
-                var pos = fileName.IndexOf(scaleToken) + scaleToken.Length;
-                var sizeText = fileName.Substring(pos);
-                if (Int32.TryParse(sizeText, out var size)) {
-                    sizes.Add(size);
-                }
-            }
-            if (sizes.Count == 0) {
-                return null;
-            }
-
-            sizes.Sort();
-            return System.IO.Path.Combine(Path, System.IO.Path.GetDirectoryName(resourceName), name + scaleToken + sizes.Last() + ext);
-        }
-
         public override String ToString () {
             return FullName;
         }
@@ -94,20 +69,6 @@ namespace UWPIconExtractor {
             }
 
             return FromProcess(processId);
-        }
-
-        public static AppxPackage FromProcess (Process process) {
-            if (process == null) {
-                process = Process.GetCurrentProcess();
-            }
-
-            try {
-                return FromProcess(process.Handle);
-            }
-            catch {
-                // probably access denied on .Handle
-                return null;
-            }
         }
 
         public static AppxPackage FromProcess (Int32 processId) {
