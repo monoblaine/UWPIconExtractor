@@ -90,7 +90,7 @@ namespace UWPIconExtractor {
 
                 infoBuffer = Marshal.AllocHGlobal(len);
 
-                var res = GetPackageInfo(infoRef, flags, ref len, infoBuffer, out count);
+                GetPackageInfo(infoRef, flags, ref len, infoBuffer, out count);
 
                 for (var i = 0; i < count; i++) {
                     var info = (PACKAGE_INFO) Marshal.PtrToStructure(infoBuffer + i * Marshal.SizeOf(typeof(PACKAGE_INFO)), typeof(PACKAGE_INFO));
