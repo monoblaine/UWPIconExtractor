@@ -17,17 +17,9 @@ namespace UWPIconExtractor {
 
         public String Path { get; private set; }
 
-        public String ApplicationUserModelId { get; private set; }
-
         public IReadOnlyList<AppxApp> Apps {
             get {
                 return _apps;
-            }
-        }
-
-        public IEnumerable<AppxPackage> DependencyGraph {
-            get {
-                return QueryPackageInfo(FullName, PackageConstants.PACKAGE_FILTER_ALL_LOADED).Where(p => p.FullName != FullName);
             }
         }
 
@@ -79,14 +71,7 @@ namespace UWPIconExtractor {
                 throw new Exception($"not an AppX / {Marshal.GetLastWin32Error()}");
             }
 
-            var package = QueryPackageInfo(fullName, PackageConstants.PACKAGE_FILTER_HEAD).First();
-
-            len = 0;
-            GetApplicationUserModelId(hProcess, ref len, null);
-            sb = new StringBuilder(len);
-            package.ApplicationUserModelId = GetApplicationUserModelId(hProcess, ref len, sb) == 0 ? sb.ToString() : null;
-
-            return package;
+            return QueryPackageInfo(fullName, PackageConstants.PACKAGE_FILTER_HEAD).First();
         }
 
         private static IEnumerable<AppxPackage> QueryPackageInfo (String fullName, PackageConstants flags) {
@@ -135,7 +120,7 @@ namespace UWPIconExtractor {
 
                     while (apps.GetHasCurrent()) {
                         var app = apps.GetCurrent();
-                        var appx = new AppxApp(app) {
+                        var appx = new AppxApp {
                             Id = GetStringValue(app, "Id"),
                             Square44x44Logo = GetStringValue(app, "Square44x44Logo")
                         };
@@ -222,9 +207,6 @@ namespace UWPIconExtractor {
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern Int32 GetPackageFullName (IntPtr hProcess, ref Int32 packageFullNameLength, StringBuilder packageFullName);
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-        private static extern Int32 GetApplicationUserModelId (IntPtr hProcess, ref Int32 applicationUserModelIdLength, StringBuilder applicationUserModelId);
 
         [Flags]
         private enum PackageConstants {
