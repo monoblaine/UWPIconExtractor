@@ -88,6 +88,7 @@ namespace UWPIconExtractor {
 
         public static AppxPackage FromWindow (IntPtr handle) {
             GetWindowThreadProcessId(handle, out var processId);
+
             if (processId == 0) {
                 return null;
             }
@@ -112,6 +113,7 @@ namespace UWPIconExtractor {
         public static AppxPackage FromProcess (Int32 processId) {
             const Int32 QueryLimitedInformation = 0x1000;
             IntPtr hProcess = OpenProcess(QueryLimitedInformation, false, processId);
+
             try {
                 return FromProcess(hProcess);
             }
@@ -130,12 +132,14 @@ namespace UWPIconExtractor {
             // hprocess must have been opened with QueryLimitedInformation
             var len = 0;
             GetPackageFullName(hProcess, ref len, null);
+
             if (len == 0) {
                 throw new Exception($"len == 0 / {Marshal.GetLastWin32Error()}");
             }
 
             var sb = new StringBuilder(len);
             var fullName = GetPackageFullName(hProcess, ref len, sb) == 0 ? sb.ToString() : null;
+
             if (String.IsNullOrEmpty(fullName)) { // not an AppX
                 throw new Exception($"not an AppX / {Marshal.GetLastWin32Error()}");
             }
@@ -146,6 +150,7 @@ namespace UWPIconExtractor {
             GetApplicationUserModelId(hProcess, ref len, null);
             sb = new StringBuilder(len);
             package.ApplicationUserModelId = GetApplicationUserModelId(hProcess, ref len, sb) == 0 ? sb.ToString() : null;
+
             return package;
         }
 
@@ -171,15 +176,22 @@ namespace UWPIconExtractor {
 
         private static IEnumerable<AppxPackage> QueryPackageInfo (String fullName, PackageConstants flags) {
             OpenPackageInfoByFullName(fullName, 0, out var infoRef);
+
             if (infoRef != IntPtr.Zero) {
                 IntPtr infoBuffer = IntPtr.Zero;
+
                 try {
                     var len = 0;
+
                     GetPackageInfo(infoRef, flags, ref len, IntPtr.Zero, out var count);
+
                     if (len > 0) {
                         var factory = (IAppxFactory) new AppxFactory();
+
                         infoBuffer = Marshal.AllocHGlobal(len);
+
                         var res = GetPackageInfo(infoRef, flags, ref len, infoBuffer, out count);
+
                         for (var i = 0; i < count; i++) {
                             var info = (PACKAGE_INFO) Marshal.PtrToStructure(infoBuffer + i * Marshal.SizeOf(typeof(PACKAGE_INFO)), typeof(PACKAGE_INFO));
                             var package = new AppxPackage {
@@ -196,9 +208,12 @@ namespace UWPIconExtractor {
                             // read manifest
                             var manifestPath = System.IO.Path.Combine(package.Path, "AppXManifest.xml");
                             const Int32 STGM_SHARE_DENY_NONE = 0x40;
+
                             SHCreateStreamOnFileEx(manifestPath, STGM_SHARE_DENY_NONE, 0, false, IntPtr.Zero, out var strm);
+
                             if (strm != null) {
                                 var reader = factory.CreateManifestReader(strm);
+
                                 package._properties = reader.GetProperties();
                                 package.Description = package.GetPropertyStringValue("Description");
                                 package.DisplayName = package.GetPropertyStringValue("DisplayName");
@@ -207,6 +222,7 @@ namespace UWPIconExtractor {
                                 package.IsFramework = package.GetPropertyBoolValue("Framework");
 
                                 var apps = reader.GetApplications();
+
                                 while (apps.GetHasCurrent()) {
                                     var app = apps.GetCurrent();
                                     var appx = new AppxApp(app) {
@@ -230,13 +246,17 @@ namespace UWPIconExtractor {
                                         Square70x70Logo = GetStringValue(app, "Square70x70Logo"),
                                         MinWidth = GetStringValue(app, "MinWidth")
                                     };
+
                                     package._apps.Add(appx);
                                     apps.MoveNext();
                                 }
+
                                 Marshal.ReleaseComObject(strm);
                             }
+
                             yield return package;
                         }
+
                         Marshal.ReleaseComObject(factory);
                     }
                 }
@@ -244,6 +264,7 @@ namespace UWPIconExtractor {
                     if (infoBuffer != IntPtr.Zero) {
                         Marshal.FreeHGlobal(infoBuffer);
                     }
+
                     ClosePackageInfo(infoRef);
                 }
             }
@@ -259,6 +280,7 @@ namespace UWPIconExtractor {
             }
 
             const String resourceScheme = "ms-resource:";
+
             if (!resource.StartsWith(resourceScheme)) {
                 return null;
             }
@@ -276,6 +298,7 @@ namespace UWPIconExtractor {
             var source = String.Format("@{{{0}? {1}}}", packageFullName, url);
             var sb = new StringBuilder(1024);
             var i = SHLoadIndirectString(source, sb, sb.Capacity, IntPtr.Zero);
+
             if (i != 0) {
                 return null;
             }
@@ -289,16 +312,19 @@ namespace UWPIconExtractor {
             }
 
             props.GetStringValue(name, out var value);
+
             return value;
         }
 
         private static Boolean GetBoolValue (IAppxManifestProperties props, String name) {
             props.GetBoolValue(name, out var value);
+
             return value;
         }
 
         internal static String GetStringValue (IAppxManifestApplication app, String name) {
             app.GetStringValue(name, out var value);
+
             return value;
         }
 
