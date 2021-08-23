@@ -112,7 +112,7 @@ namespace UWPIconExtractor {
 
         public static AppxPackage FromProcess (Int32 processId) {
             const Int32 QueryLimitedInformation = 0x1000;
-            IntPtr hProcess = OpenProcess(QueryLimitedInformation, false, processId);
+            var hProcess = OpenProcess(QueryLimitedInformation, false, processId);
 
             try {
                 return FromProcess(hProcess);
@@ -181,7 +181,7 @@ namespace UWPIconExtractor {
                 yield break;
             }
 
-            IntPtr infoBuffer = IntPtr.Zero;
+            var infoBuffer = IntPtr.Zero;
 
             try {
                 var len = 0;
