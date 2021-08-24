@@ -97,7 +97,7 @@ namespace UWPIconExtractor {
                     var info = (PACKAGE_INFO) Marshal.PtrToStructure(infoBuffer + i * Marshal.SizeOf(typeof(PACKAGE_INFO)), typeof(PACKAGE_INFO));
                     var package = new AppxPackage {
                         FullName = Marshal.PtrToStringUni(info.packageFullName),
-                        Path = Marshal.PtrToStringUni(info.path),
+                        Path = Marshal.PtrToStringUni(info.path)
                     };
 
                     // read manifest
