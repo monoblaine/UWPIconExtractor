@@ -17,6 +17,8 @@ namespace UWPIconExtractor {
 
         public String Path { get; private set; }
 
+        public String Logo { get; internal set; }
+
         public IReadOnlyList<AppxApp> Apps => _apps;
 
         public override String ToString () => FullName;
@@ -111,6 +113,14 @@ namespace UWPIconExtractor {
                     }
 
                     var reader = factory.CreateManifestReader(strm);
+                    var properties = reader.GetProperties();
+
+                    properties.GetStringValue("Logo", out var logo);
+
+                    package.Logo = logo;
+
+                    Marshal.ReleaseComObject(properties);
+
                     var apps = reader.GetApplications();
 
                     while (apps.GetHasCurrent()) {
@@ -164,7 +174,11 @@ namespace UWPIconExtractor {
 
         [Guid("4E1BD148-55A0-4480-A3D1-15544710637C"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
         private interface IAppxManifestReader {
-            void _VtblGap0_7 (); // skip 7 methods
+            void _VtblGap0_1 (); // skip 1 method
+
+            IAppxManifestProperties GetProperties ();
+
+            void _VtblGap1_5 (); // skip 5 methods
 
             IAppxManifestApplicationsEnumerator GetApplications ();
         }
@@ -180,6 +194,14 @@ namespace UWPIconExtractor {
 
         [Guid("5DA89BF4-3773-46BE-B650-7E744863B7E8"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
         internal interface IAppxManifestApplication {
+            [PreserveSig]
+            Int32 GetStringValue ([MarshalAs(UnmanagedType.LPWStr)] String name, [MarshalAs(UnmanagedType.LPWStr)] out String vaue);
+        }
+
+        [Guid("03FAF64D-F26F-4B2C-AAF7-8FE7789B8BCA"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        private interface IAppxManifestProperties {
+            void _VtblGap0_1 (); // skip 1 method
+
             [PreserveSig]
             Int32 GetStringValue ([MarshalAs(UnmanagedType.LPWStr)] String name, [MarshalAs(UnmanagedType.LPWStr)] out String vaue);
         }
