@@ -20,14 +20,17 @@ namespace UWPIconExtractor {
                 package.Path,
                 package.Apps[0].Square44x44Logo
             );
-            var fileInfo = new FileInfo(pathToImage);
-
-            return (
-                fileInfo.DirectoryName + "\\" +
+            var fileInfo1 = new FileInfo(pathToImage);
+            var fileInfo2 = new FileInfo(
+                fileInfo1.DirectoryName + "\\" +
                 Path.GetFileNameWithoutExtension(pathToImage) +
                 ".targetsize-32" +
-                fileInfo.Extension
+                fileInfo1.Extension
             );
+
+            return fileInfo2.Exists
+                ? fileInfo2.FullName
+                : fileInfo1.FullName;
         }
     }
 }
