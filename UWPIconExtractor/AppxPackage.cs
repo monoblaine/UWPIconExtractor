@@ -76,6 +76,7 @@ namespace UWPIconExtractor {
             }
 
             var infoBuffer = IntPtr.Zero;
+            IAppxFactory factory = null;
 
             try {
                 var len = 0;
@@ -86,11 +87,11 @@ namespace UWPIconExtractor {
                     yield break;
                 }
 
-                var factory = (IAppxFactory) new AppxFactory();
-
                 infoBuffer = Marshal.AllocHGlobal(len);
 
                 GetPackageInfo(infoRef, flags, ref len, infoBuffer, out count);
+
+                factory = (IAppxFactory) new AppxFactory();
 
                 for (var i = 0; i < count; i++) {
                     var info = (PACKAGE_INFO) Marshal.PtrToStructure(infoBuffer + i * Marshal.SizeOf(typeof(PACKAGE_INFO)), typeof(PACKAGE_INFO));
@@ -106,7 +107,7 @@ namespace UWPIconExtractor {
                     SHCreateStreamOnFileEx(manifestPath, STGM_SHARE_DENY_NONE, 0, false, IntPtr.Zero, out var strm);
 
                     if (strm == null) {
-                        yield break;
+                        continue;
                     }
 
                     var reader = factory.CreateManifestReader(strm);
@@ -120,17 +121,23 @@ namespace UWPIconExtractor {
                         };
 
                         package._apps.Add(appx);
+
+                        Marshal.ReleaseComObject(app);
                         apps.MoveNext();
                     }
 
+                    Marshal.ReleaseComObject(apps);
+                    Marshal.ReleaseComObject(reader);
                     Marshal.ReleaseComObject(strm);
 
                     yield return package;
                 }
-
-                Marshal.ReleaseComObject(factory);
             }
             finally {
+                if (factory != null) {
+                    Marshal.ReleaseComObject(factory);
+                }
+
                 if (infoBuffer != IntPtr.Zero) {
                     Marshal.FreeHGlobal(infoBuffer);
                 }
