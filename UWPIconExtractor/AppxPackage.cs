@@ -115,12 +115,11 @@ namespace UWPIconExtractor {
 
                     while (apps.GetHasCurrent()) {
                         var app = apps.GetCurrent();
-                        var appx = new AppxApp {
+
+                        package._apps.Add(new AppxApp {
                             Id = GetStringValue(app, "Id"),
                             Square44x44Logo = GetStringValue(app, "Square44x44Logo")
-                        };
-
-                        package._apps.Add(appx);
+                        });
 
                         Marshal.ReleaseComObject(app);
                         apps.MoveNext();
